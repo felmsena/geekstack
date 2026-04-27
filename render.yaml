@@ -23,6 +23,10 @@ services:
         value: "development:test"
       - key: RAILS_LOG_TO_STDOUT
         value: "true"
+      - key: RAILS_MAX_THREADS
+        value: "2"
+      - key: MALLOC_ARENA_MAX
+        value: "2"
       - key: RAILS_MASTER_KEY
         sync: false
       - key: DATABASE_URL
