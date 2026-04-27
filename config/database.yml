@@ -80,6 +80,5 @@ test:
 #
 production:
   <<: *default
+  url: <%= ENV["DATABASE_URL"] %>
   database: geekstack_production
-  username: geekstack
-  password: <%= ENV["GEEKSTACK_DATABASE_PASSWORD"] %>

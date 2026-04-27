@@ -87,8 +87,8 @@ Rails.application.config.after_initialize do
   # Role-based permissions
   # Configure which permission sets are assigned to each role
   # More on permission sets: https://spreecommerce.org/docs/developer/customization/permissions
-  Spree.permissions.assign(:default, [Spree::PermissionSets::DefaultCustomer])
-  Spree.permissions.assign(:admin, [Spree::PermissionSets::SuperUser])
+  Spree.permissions.assign(:default, [ Spree::PermissionSets::DefaultCustomer ])
+  Spree.permissions.assign(:admin, [ Spree::PermissionSets::SuperUser ])
 
   # Example: Create a custom role with specific permissions
   # Spree.permissions.assign(:customer_service, [
@@ -116,14 +116,10 @@ end
 Spree.user_class = "Spree::LegacyUser"
 Spree.admin_user_class = "Spree::LegacyAdminUser"
 
-            Rails.application.config.to_prepare do
-              require_dependency 'spree/authentication_helpers'
-            end
-
-            if defined?(Devise) && Devise.respond_to?(:parent_controller)
-              Devise.parent_controller = "Spree::BaseController"
-            end
+if defined?(Devise) && Devise.respond_to?(:parent_controller)
+  Devise.parent_controller = "Spree::BaseController"
+end
 
 Rails.application.config.to_prepare do
-  require_dependency 'spree/authentication_helpers'
+  load Rails.root.join("lib", "spree", "authentication_helpers.rb")
 end

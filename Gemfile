@@ -35,6 +35,7 @@ gem "bootsnap", require: false
 gem "image_processing", "~> 1.2"
 
 # Spree headless commerce
+gem "rack-cors"
 gem "spree", "~> 5.4"
 gem "spree_admin", "~> 5.4"
 gem "spree_emails", "~> 5.4"
