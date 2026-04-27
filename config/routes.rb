@@ -9,7 +9,8 @@ Rails.application.routes.draw do
         passwords: 'spree/admin/user_passwords'
       },
       skip: :registrations,
-      path: :admin_user,
+      path: 'admin',
+      path_names: { sign_in: 'login', sign_out: 'logout' },
       router_name: :spree
     )
   end
