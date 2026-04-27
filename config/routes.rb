@@ -21,6 +21,7 @@ Rails.application.routes.draw do
   #
   # We ask that you don't use the :as option here, as Spree relies on it being
   # the default of "spree".
+  devise_for :users, class_name: "Spree::User"
   mount Spree::Core::Engine, at: '/'
 # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
