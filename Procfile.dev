@@ -1,0 +1,1 @@
+admin_css: bin/rails spree:admin:tailwindcss:watch

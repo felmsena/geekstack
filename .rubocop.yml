@@ -1,0 +1,11 @@
+# Omakase Ruby styling for Rails
+inherit_gem: { rubocop-rails-omakase: rubocop.yml }
+
+# Exclude Spree-generated files from style checks
+AllCops:
+  Exclude:
+    - "db/migrate/*.spree.rb"
+    - "db/migrate/20210913000000_create_spree_admin_users.rb"
+    - "config/initializers/spree.rb"
+    - "lib/spree/authentication_helpers.rb"
+    - "render.yaml"
