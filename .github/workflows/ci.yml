@@ -85,6 +85,9 @@ jobs:
           ruby-version: .ruby-version
           bundler-cache: true
 
+      - name: Build Spree Admin assets
+        run: bin/rails spree:admin:tailwindcss:build
+
       - name: Run tests
         env:
           RAILS_ENV: test

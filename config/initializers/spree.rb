@@ -123,3 +123,7 @@ Spree.admin_user_class = "Spree::LegacyAdminUser"
             if defined?(Devise) && Devise.respond_to?(:parent_controller)
               Devise.parent_controller = "Spree::BaseController"
             end
+
+Rails.application.config.to_prepare do
+  require_dependency 'spree/authentication_helpers'
+end

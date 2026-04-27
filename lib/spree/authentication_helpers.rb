@@ -1,3 +1,5 @@
+# Dummy authentication helpers for testing purposes.
+# These provide stub implementations that don't require actual routes.
 module Spree
   module AuthenticationHelpers
     def self.included(receiver)
@@ -14,35 +16,35 @@ module Spree
     end
 
     def spree_current_user
-      send("current_#{Spree.user_class.model_name.singular_route_key}")
+      @spree_current_user
     end
 
-    def spree_login_path(opts = {})
-      new_session_path(Spree.user_class.model_name.singular_route_key, opts)
+    def spree_login_path(_opts = {})
+      '/login'
     end
 
-    def spree_signup_path(opts = {})
-      new_registration_path(Spree.user_class.model_name.singular_route_key, opts)
+    def spree_signup_path(_opts = {})
+      '/signup'
     end
 
-    def spree_logout_path(opts = {})
-      destroy_session_path(Spree.user_class.model_name.singular_route_key, opts)
+    def spree_logout_path(_opts = {})
+      '/logout'
     end
 
-    def spree_forgot_password_path(opts = {})
-      new_password_path(Spree.user_class.model_name.singular_route_key, opts)
+    def spree_forgot_password_path(_opts = {})
+      '/forgot_password'
     end
 
-    def spree_edit_password_path(opts = {})
-      edit_registration_path(Spree.user_class.model_name.singular_route_key, opts)
+    def spree_edit_password_path(_opts = {})
+      '/edit_password'
     end
 
-    def spree_admin_login_path(opts = {})
-      new_session_path(Spree.admin_user_class.model_name.singular_route_key, opts)
+    def spree_admin_login_path(_opts = {})
+      '/admin/login'
     end
 
-    def spree_admin_logout_path(opts = {})
-      destroy_session_path(Spree.admin_user_class.model_name.singular_route_key, opts)
+    def spree_admin_logout_path(_opts = {})
+      '/admin/logout'
     end
   end
 end

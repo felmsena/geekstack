@@ -5,4 +5,6 @@ inherit_gem: { rubocop-rails-omakase: rubocop.yml }
 AllCops:
   Exclude:
     - "db/migrate/*.spree.rb"
+    - "db/migrate/20210913000000_create_spree_admin_users.rb"
     - "config/initializers/spree.rb"
+    - "lib/spree/authentication_helpers.rb"
