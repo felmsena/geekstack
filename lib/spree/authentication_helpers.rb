@@ -14,7 +14,8 @@ module Spree
     end
 
     def spree_current_user
-      send("current_#{Spree.user_class.model_name.singular_route_key}")
+      return current_admin_user if respond_to?(:current_admin_user, true)
+      return current_user if respond_to?(:current_user, true)
     end
 
     def spree_login_path(opts = {})
