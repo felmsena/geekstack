@@ -44,7 +44,8 @@ funcional. Los ítems marcados **[BUG]** son defectos confirmados en código exi
       en MP seguía en estado `checkout` en Spree (nunca pasó por
       `pending`/`processing`), así que `failure!` nunca era una transición
       válida — se cambió a `void!`.
-- [ ] Registrar `Spree::LogEntry` en el payment con la respuesta de MP (auditoría).
+- [x] Registrar `Spree::LogEntry` en el payment con la respuesta de MP (auditoría):
+      `payment.log_entries.create!(details: mp_payment.to_json)` en `ProcessPayment#call`.
 - [ ] Webhook en desarrollo: túnel (ngrok/cloudflared) + setear
       `preferred_webhook_url`; probar flujo completo sandbox end-to-end.
 - [ ] Página `/checkout/success` del front debe verificar el estado real de la
@@ -79,10 +80,9 @@ funcional. Los ítems marcados **[BUG]** son defectos confirmados en código exi
 - [ ] Seeds idempotentes para desarrollo: tiendas, zonas, métodos de envío,
       método de pago MP con credenciales dummy — hoy todo eso vive solo en la BD
       local y no es reproducible.
-- [ ] Fixear el warning de deprecación `Spree::DefaultPrice` que aparece en los
-      tests nuevos (`create_test_product`/`add_line_item` en
-      `spree_test_helpers.rb`): usar `variant.set_price(currency, amount)` en
-      vez de asignar `price:` directo. No afecta la corrección, solo ruido.
+- [x] Fixeado el warning de deprecación `Spree::DefaultPrice`: `create_test_product`
+      ahora usa `variant.set_price("CLP", amount)` y `add_line_item` lee
+      `variant.price_in("CLP").amount` en vez de asignar/leer `price:` directo.
 - [x] `bundle-audit` corregido: puma, rails-html-sanitizer, spree (CVE de CSV
       injection, parchado en 5.4.3+), websocket-driver, devise, msgpack
       actualizados a sus versiones parchadas dentro de la línea 5.4.x

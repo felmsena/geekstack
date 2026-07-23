@@ -91,6 +91,19 @@ module Geekstack
         end
       end
 
+      test "logs the MercadoPago response on the payment for auditing" do
+        stub_mp_payment(id: 992, status: "approved", external_reference: @order.number, transaction_amount: 10_000)
+
+        ProcessPayment.new(mp_payment_id: 992, access_token: "TEST-TOKEN").call
+
+        @payment.reload
+        log_entry = @payment.log_entries.last
+        assert log_entry.present?
+        details = JSON.parse(log_entry.details)
+        assert_equal 992, details["id"]
+        assert_equal "approved", details["status"]
+      end
+
       test "matches the most recent pending MercadoPago payment, ignoring the preference_id" do
         # Regression test: the MercadoPago Payment resource has no preference_id
         # field, so matching must not depend on it.

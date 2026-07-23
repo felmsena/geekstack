@@ -97,6 +97,9 @@ Detalles de robustez (agregados tras testear el flujo, ver tests en
 - Cada llamada a `/preference` voidea los pagos `checkout` previos del mismo
   payment method en esa orden, para no acumular duplicados si el usuario
   reintenta el pago.
+- Cada respuesta de `/v1/payments/:id` se guarda como `Spree::LogEntry` en el
+  payment (`payment.log_entries.create!(details: mp_payment.to_json)`) para
+  auditoría — se ve en el admin de Spree en el detalle del pago.
 
 ## Gotchas de la API v3 (aprendidos a golpes)
 

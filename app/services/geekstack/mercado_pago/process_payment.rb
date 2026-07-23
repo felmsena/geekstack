@@ -21,6 +21,8 @@ module Geekstack
         payment = find_payment(order)
         return unless payment
 
+        payment.log_entries.create!(details: mp_payment.to_json)
+
         case mp_payment["status"]
         when "approved"
           payment.update!(amount: mp_payment["transaction_amount"], response_code: mp_payment["id"].to_s)
