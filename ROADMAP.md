@@ -13,14 +13,10 @@ funcional. Los ítems marcados **[BUG]** son defectos confirmados en código exi
       (formato nativo de asdf) en vez de depender de config global del usuario.
 - [x] **Commitear el trabajo actual**: código de MercadoPago, stock locations
       y rutas commiteados (`8f47392`).
-- [x] Agregar `.idea/` y `.kamal/` al `.gitignore`.
-- [ ] **Decidir: ¿Kamal o Render?** Hay `render.yaml` (configurado, 2 commits
-      de tuning real) y `.kamal/` + `config/deploy.yml` (scaffold default de
-      `rails new`, nunca configurado — IP placeholder `192.168.0.1`). Render
-      es el target real; falta que el usuario confirme borrar el scaffold de
-      Kamal (`config/deploy.yml`, `bin/kamal`, `.kamal/`, gem `kamal` del
-      Gemfile) — la eliminación fue bloqueada por el permission classifier al
-      intentar hacerlo automáticamente.
+- [x] **Decidir: ¿Kamal o Render?** Render es el target real (`render.yaml`
+      configurado, 2 commits de tuning). Se eliminó el scaffold de Kamal
+      (`config/deploy.yml`, `bin/kamal`, `.kamal/`, gem `kamal` del Gemfile) —
+      nunca se configuró (IP placeholder `192.168.0.1`).
 
 ## Fase 1 — Hardening MercadoPago (antes de recibir pagos reales)
 

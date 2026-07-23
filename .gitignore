@@ -33,7 +33,6 @@
 # Ignore key files for decrypting credentials and more.
 /config/*.key
 
-# IDE and deploy tooling local state
+# IDE local state
 /.idea
-/.kamal/secrets*
 
