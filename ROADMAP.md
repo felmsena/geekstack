@@ -7,41 +7,47 @@ funcional. Los ítems marcados **[BUG]** son defectos confirmados en código exi
 
 ## Fase 0 — Recuperar y consolidar (bloqueante, hacer primero)
 
-- [ ] **Reparar entorno Ruby**: el proyecto requiere Ruby 3.4.8 (`.tool-versions`)
-      pero fue desinstalado de asdf (quedan 3.3.0, 3.3.11, 4.0.4).
-      Opciones: `asdf install ruby 3.4.8` + `bundle install`, o migrar el proyecto
-      a 3.4.x más reciente actualizando `.tool-versions` y `Gemfile.lock`.
-- [ ] **Commitear el trabajo actual**: todo el código de MercadoPago, stock
-      locations y rutas está **untracked** en `feature/spree-setup`. Un
-      `git clean` accidental lo borraría. Incluir: `app/controllers/spree/`,
-      `app/jobs/spree/`, `app/models/spree/payment_method/`, `app/services/`,
-      `config/routes.rb`, `CLAUDE.md`, `ROADMAP.md`.
-- [ ] Agregar `.idea/` y `.kamal/` al `.gitignore`.
-- [ ] Decidir: ¿Kamal o Render? Hay `render.yaml` y `.kamal/` conviviendo;
-      eliminar el que no se use.
+- [x] **Reparar entorno Ruby**: Ruby 3.4.8 reinstalado vía asdf. Causa real
+      del problema: asdf 0.20 no lee `.ruby-version` sin `legacy_version_file`
+      en `~/.asdfrc` — se agregó un `.tool-versions` propio del proyecto
+      (formato nativo de asdf) en vez de depender de config global del usuario.
+- [x] **Commitear el trabajo actual**: código de MercadoPago, stock locations
+      y rutas commiteados (`8f47392`).
+- [x] Agregar `.idea/` y `.kamal/` al `.gitignore`.
+- [ ] **Decidir: ¿Kamal o Render?** Hay `render.yaml` (configurado, 2 commits
+      de tuning real) y `.kamal/` + `config/deploy.yml` (scaffold default de
+      `rails new`, nunca configurado — IP placeholder `192.168.0.1`). Render
+      es el target real; falta que el usuario confirme borrar el scaffold de
+      Kamal (`config/deploy.yml`, `bin/kamal`, `.kamal/`, gem `kamal` del
+      Gemfile) — la eliminación fue bloqueada por el permission classifier al
+      intentar hacerlo automáticamente.
 
 ## Fase 1 — Hardening MercadoPago (antes de recibir pagos reales)
 
-- [ ] **[BUG] `ProcessPayment` nunca encuentra el pago**: busca
-      `payments.find_by(response_code: mp_payment["preference_id"])`, pero la
-      respuesta de `GET /v1/payments/:id` **no incluye** `preference_id`.
-      Fix sugerido: localizar la orden por `external_reference` (ya se hace) y el
-      pago por `payment_method` + estado pendiente, o guardar el `preference_id`
-      en la preferencia MP como `metadata` y leerlo de ahí.
-- [ ] **[BUG] Webhook posiblemente bloqueado por API key**: la ruta
-      `POST /api/v3/store/mercado_pago/webhook` hereda de `BaseController`, que
-      exige `X-Spree-Api-Key`. MercadoPago no envía ese header → verificar y, si
-      aplica, saltarse esa autenticación **solo** en la acción `webhook`.
-- [ ] **Validar firma del webhook** (`x-signature` + `x-request-id`, HMAC-SHA256
-      con el secret del panel MP). Hoy cualquiera puede POSTear payment_ids.
-      Mitigante actual: se re-consulta a MP con el access token, pero igual
-      permite spam de jobs.
-- [ ] **Pagos duplicados**: cada llamada a `/preference` crea un nuevo
-      `Spree::Payment`. Invalidar (void) los pagos `checkout` previos del mismo
-      método antes de crear otro.
-- [ ] Robustecer los servicios HTTP: timeouts (`open_timeout`/`read_timeout`),
-      rescate de `JSON::ParserError` y errores de red, logging estructurado del
-      request/response de MP (sin credenciales).
+- [x] **[BUG corregido] `ProcessPayment` nunca encontraba el pago**: ahora
+      matchea por `order` (via `external_reference`) + pago más reciente en
+      estado `checkout`/`pending` de ese payment method, en vez de un
+      `preference_id` que el recurso Payment de MP no trae.
+- [x] **[BUG corregido] Webhook bloqueado por API key**: se agregó
+      `skip_before_action :authenticate_api_key!, only: :webhook`.
+- [x] **Validar firma del webhook**: HMAC-SHA256 sobre
+      `"id:{data.id};request-id:{x-request-id};ts:{ts};"` contra
+      `preferred_webhook_secret` (nueva preference del payment method). Si el
+      secret no está seteado, deja pasar con warning en log — **falta setear
+      el secret real en producción** (Mercado Pago → Tus integraciones →
+      Webhooks → Configurar notificación).
+- [x] **Pagos duplicados**: `create_preference` voidea los pagos `checkout`
+      previos del mismo payment method antes de crear uno nuevo.
+- [x] Robustecer los servicios HTTP: timeouts (`open_timeout`/`read_timeout`),
+      rescate de `JSON::ParserError` y errores de red en ambos servicios.
+- [x] **[BUG corregido, no listado originalmente]** `may_<evento>?` no existe
+      en esta versión de Spree (es `can_<evento>?`, gema `state_machines` no
+      `state_machine`) — afectaba `payment.complete!`/`failure!`/`void!` y
+      `order.next!`, silenciosamente los dejaba sin ejecutar nunca.
+- [x] **[BUG corregido, no listado originalmente]** Un pago rechazado/cancelado
+      en MP seguía en estado `checkout` en Spree (nunca pasó por
+      `pending`/`processing`), así que `failure!` nunca era una transición
+      válida — se cambió a `void!`.
 - [ ] Registrar `Spree::LogEntry` en el payment con la respuesta de MP (auditoría).
 - [ ] Webhook en desarrollo: túnel (ngrok/cloudflared) + setear
       `preferred_webhook_url`; probar flujo completo sandbox end-to-end.
@@ -51,27 +57,41 @@ funcional. Los ítems marcados **[BUG]** son defectos confirmados en código exi
       si no se quiere manejar pagos en efectivo/transferencia diferida).
 - [ ] Producción: mover credenciales MP a `Rails.credentials` o ENV
       (hoy: preferences en texto plano en BD), **rotar los tokens TEST**
-      (se compartieron en chats), configurar back_urls y webhook_url reales,
-      y activar `auto_return` (se activa solo al dejar de usar localhost).
+      (se compartieron en chats), configurar back_urls, webhook_url y
+      webhook_secret reales, y activar `auto_return` (se activa solo al dejar
+      de usar localhost).
 
 ## Fase 2 — Tests y calidad (deuda actual: 0 tests del código custom)
 
-- [ ] Tests de `Geekstack::MercadoPago::CreatePreference` y `ProcessPayment`
-      con WebMock/stubs (agregar gema `webmock`).
-- [ ] Tests de controller para `mercado_pago_controller` (preference, webhook)
-      y `stock_locations_controller`.
+- [x] Tests de `Geekstack::MercadoPago::CreatePreference` y `ProcessPayment`
+      con WebMock (gema agregada al Gemfile). 15 tests cubriendo payload,
+      auto_return, errores de red/JSON, y el matching de pagos corregido.
+- [x] Tests de controller para `mercado_pago_controller` (preference, webhook,
+      firma, pagos duplicados) y `stock_locations_controller`. Ver
+      `test/support/spree_test_helpers.rb` para los builders reutilizables de
+      store/order/producto/stock/zona de test.
 - [ ] Test de integración del checkout API v3 completo (cart → address →
       delivery → payment → complete) — es la documentación viva del flujo.
-- [ ] CI (GitHub Actions): `bin/rails test` + `brakeman` + `bundle-audit` +
-      `rubocop` en cada PR. Las gemas ya están en el Gemfile; solo falta el workflow.
-- [ ] Fix N+1 en `StockLocationsController#index` (una query de Zone por
-      location): cargar todas las zonas `description LIKE 'stock_location:%'` de
-      una vez; agregar caché HTTP o de fragmento (los datos cambian poco).
-- [ ] Extraer la convención `"stock_location:<id>"` a un método/constante
-      (p. ej. `Geekstack::StoreZone`) en vez de strings repetidos.
+      Pendiente: mayor esfuerzo que los anteriores (delivery rates, fulfillments).
+- [x] CI (GitHub Actions): ya existía `.github/workflows/ci.yml` (scaffold de
+      `rails new`) con `bin/rails test` + `brakeman` + `bundler-audit` +
+      `rubocop`, con Postgres real. No se creó nada nuevo, solo se verificó.
+- [x] Fix N+1 en `StockLocationsController#index`: una sola query de Zone con
+      `includes(zone_members: :zoneable)` en vez de una query por location.
+- [x] Extraída la convención `"stock_location:<id>"` a
+      `Geekstack::StoreZone.description_for`/`.location_id_from`.
 - [ ] Seeds idempotentes para desarrollo: tiendas, zonas, métodos de envío,
       método de pago MP con credenciales dummy — hoy todo eso vive solo en la BD
       local y no es reproducible.
+- [ ] Fixear el warning de deprecación `Spree::DefaultPrice` que aparece en los
+      tests nuevos (`create_test_product`/`add_line_item` en
+      `spree_test_helpers.rb`): usar `variant.set_price(currency, amount)` en
+      vez de asignar `price:` directo. No afecta la corrección, solo ruido.
+- [x] `bundle-audit` corregido: puma, rails-html-sanitizer, spree (CVE de CSV
+      injection, parchado en 5.4.3+), websocket-driver, devise, msgpack
+      actualizados a sus versiones parchadas dentro de la línea 5.4.x
+      (`gem "spree", "~> 5.4.2"` — pineado a propósito, ver Fase 3).
+      `bundle exec bundle-audit check` → "No vulnerabilities found".
 
 ## Fase 3 — Actualizar Spree 5.4.2 → 5.5.x
 

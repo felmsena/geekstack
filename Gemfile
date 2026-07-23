@@ -42,9 +42,12 @@ gem "image_processing", "~> 1.2"
 
 # Spree Commerce
 gem "devise"
-gem "spree", "~> 5.4"
-gem "spree_admin", "~> 5.4"
-gem "spree_emails", "~> 5.4"
+# Pinned to the 5.4.x line on purpose: the 5.5 upgrade is a deliberate,
+# separate step (see ROADMAP.md Fase 3) so it isn't pulled in accidentally
+# by an unrelated `bundle update`.
+gem "spree", "~> 5.4.2"
+gem "spree_admin", "~> 5.4.2"
+gem "spree_emails", "~> 5.4.2"
 gem "spree_i18n"
 
 group :development do
@@ -74,4 +77,7 @@ group :test do
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
   gem "selenium-webdriver"
+
+  # Stub HTTP calls to MercadoPago in tests
+  gem "webmock"
 end

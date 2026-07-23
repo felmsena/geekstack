@@ -4,14 +4,13 @@ module Spree
       module Store
         class StockLocationsController < BaseController
           def index
-            locations = Spree::StockLocation.active.map do |location|
-              zone = Spree::Zone.find_by(description: "stock_location:#{location.id}")
+            zones_by_location_id = Spree::Zone.where("description LIKE ?", "#{Geekstack::StoreZone::PREFIX}%")
+                                               .includes(zone_members: :zoneable)
+                                               .index_by { |zone| Geekstack::StoreZone.location_id_from(zone.description) }
 
-              communes = if zone
-                zone.zone_members.includes(:zoneable).map { |m| m.zoneable&.name }.compact.sort
-              else
-                []
-              end
+            locations = Spree::StockLocation.active.map do |location|
+              zone = zones_by_location_id[location.id]
+              communes = zone ? zone.zone_members.filter_map { |m| m.zoneable&.name }.sort : []
 
               {
                 id: location.id,

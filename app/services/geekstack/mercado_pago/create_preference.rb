@@ -18,7 +18,7 @@ module Geekstack
         req["Content-Type"]  = "application/json"
         req.body = payload.to_json
 
-        res  = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |h| h.request(req) }
+        res  = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true, open_timeout: 5, read_timeout: 10) { |h| h.request(req) }
         body = JSON.parse(res.body)
 
         if res.code.to_i == 201
@@ -26,6 +26,12 @@ module Geekstack
         else
           { success: false, error: body["message"] || "MercadoPago error #{res.code}" }
         end
+      rescue JSON::ParserError => e
+        Rails.logger.error("[MercadoPago] create_preference: invalid JSON — #{e.message}")
+        { success: false, error: "MercadoPago returned an invalid response" }
+      rescue Net::OpenTimeout, Net::ReadTimeout, SocketError, Errno::ECONNREFUSED => e
+        Rails.logger.error("[MercadoPago] create_preference: network error — #{e.class}: #{e.message}")
+        { success: false, error: "Could not reach MercadoPago, please try again" }
       end
 
       private

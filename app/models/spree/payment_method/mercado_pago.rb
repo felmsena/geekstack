@@ -6,6 +6,7 @@ module Spree
     preference :failure_url,  :string, default: ""
     preference :pending_url,  :string, default: ""
     preference :webhook_url,  :string, default: ""
+    preference :webhook_secret, :string, default: ""
 
     def supports?(_source)
       true
