@@ -1,5 +1,19 @@
 Rails.application.routes.draw do
   Spree::Core::Engine.add_routes do
+    namespace :api, defaults: { format: :json } do
+      namespace :v3 do
+        namespace :store do
+          resources :stock_locations, only: [:index]
+
+          post "mercado_pago/webhook", to: "mercado_pago#webhook"
+
+          resources :carts, only: [] do
+            post "mercado_pago/preference", to: "mercado_pago#create_preference"
+          end
+        end
+      end
+    end
+
     # Admin authentication
     devise_for(
       Spree.admin_user_class.model_name.singular_route_key,

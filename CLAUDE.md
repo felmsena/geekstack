@@ -1,0 +1,98 @@
+# Geekstack — Backend Spree (headless)
+
+Tienda chilena de juegos de mesa y productos geek. Este repo es **solo el backend**:
+Rails 8.1 + Spree 5.4.2 expuesto vía API v3. El frontend es un proyecto Next.js
+separado en `/Users/felipe/GIT/Personal/NextJS/geekstack` (cliente API en
+`src/lib/spree.ts` de ese repo).
+
+## Stack y entorno
+
+- Ruby 3.4.8 (asdf, ver `.tool-versions`) · Rails 8.1 · PostgreSQL
+- Spree 5.4.2 (`spree`, `spree_admin`, `spree_emails`, `spree_i18n`) + Devise
+- Solid Queue / Solid Cache / Solid Cable (todo en Postgres)
+- Deploy: Render free tier (`render.yaml`) — 512 MB RAM, por eso
+  `WEB_CONCURRENCY=1` y `RAILS_MAX_THREADS=2`. No subir esos valores sin cambiar de plan.
+- Tests: Minitest (`bin/rails test`). Brakeman, bundler-audit y RuboCop
+  (rails-omakase) están en el Gemfile.
+
+```sh
+bin/rails server          # backend en :3000 (el front corre en :3001)
+bin/rails test            # minitest
+bin/rails runner '...'    # consultas puntuales contra la BD de desarrollo
+```
+
+## Configuración de la tienda (datos, no código)
+
+- Moneda `CLP`, locale por defecto `es-CL`, `supported_locales` debe incluir
+  **ambos** `es` y `es-CL` — si falta uno el checkout falla con 422
+  "Locale is not supported by this store".
+- Dos `Spree::StockLocation` (Providencia y La Florida). Cada tienda se vincula a
+  una `Spree::Zone` mediante la convención `zone.description == "stock_location:<id>"`;
+  los miembros de la zona son las comunas (states de Chile) donde esa tienda despacha.
+  El endpoint custom `GET /api/v3/store/stock_locations` expone tienda + comunas.
+  Para agregar una tienda: crear StockLocation + Zone con esa descripción + ShippingMethod.
+- IVA 19% configurado como tax rate por defecto.
+
+## Código custom (todo lo que no es Spree vanilla)
+
+| Ruta | Qué es |
+|---|---|
+| `app/models/spree/payment_method/mercado_pago.rb` | PaymentMethod sin source (`source_required? == false`); credenciales MP como `preferences` |
+| `app/services/geekstack/mercado_pago/create_preference.rb` | POST a `api.mercadopago.com/checkout/preferences`, devuelve `init_point` |
+| `app/services/geekstack/mercado_pago/process_payment.rb` | Consulta `/v1/payments/:id` y actualiza el pago Spree |
+| `app/jobs/spree/mercado_pago/webhook_job.rb` | Procesa webhooks en background |
+| `app/controllers/spree/api/v3/store/mercado_pago_controller.rb` | `POST carts/:cart_id/mercado_pago/preference` y `POST mercado_pago/webhook` |
+| `app/controllers/spree/api/v3/store/stock_locations_controller.rb` | Tiendas + comunas para el front |
+
+Los servicios viven bajo `Geekstack::` (no `Spree::`) porque Zeitwerk choca con el
+namespace del gem. `app/services/geekstack/mercado_pago.rb` existe solo para
+declarar el módulo — no borrarlo.
+
+## Flujo MercadoPago (Checkout Pro)
+
+1. Front llama `POST /api/v3/store/carts/:cart_id/mercado_pago/preference`
+   (sin body, con `x-spree-token`).
+2. Backend crea la preferencia en MP, crea un `Spree::Payment` en estado
+   `checkout` con `response_code = preference_id`, y devuelve `init_point`.
+3. Front redirige a `init_point`. El usuario paga en MP.
+4. MP redirige a las back_urls (preferences del payment method; en dev apuntan a
+   `localhost:3001`, y `auto_return` se desactiva automáticamente si la URL es
+   localhost porque MP lo rechaza en sandbox).
+5. El estado real llega por webhook → `WebhookJob` → `ProcessPayment`.
+   **Nunca confiar solo en el redirect de vuelta.**
+
+Credenciales actuales: TEST, guardadas como preferences en la BD (tabla
+`spree_preferences`). Antes de producción moverlas a `Rails.credentials`/ENV y
+rotarlas.
+
+## Gotchas de la API v3 (aprendidos a golpes)
+
+- Respuestas **planas**, no JSON:API: `response.name`, no `response.data.attributes.name`.
+- IDs con prefijo: `cart_xxx`, `variant_xxx`, `ful_xxx`, `dr_xxx`. En controllers
+  custom usar `Spree::Order.find_by_prefix_id!(params[:cart_id])`.
+- Headers: `X-Spree-Api-Key` (publishable key) siempre; `x-spree-token`
+  (en minúsculas) para el carrito; `Authorization: Bearer <jwt>` para el usuario.
+- Rutas de cuenta (v3, distintas de v2): `POST /customers` (registro),
+  `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout`,
+  `GET|PATCH /customers/me`, `GET /customers/me/orders`.
+- `POST /customers` recibe `email`, `password`, `password_confirmation`
+  **en el root del body, sin wrapper** `{ user: ... }`.
+- Direcciones: `shipping_address` con `first_name`/`last_name`/`postal_code`
+  (no `firstname`/`zipcode`). El carrito responde `fulfillments[].delivery_rates`
+  (no `shipments[].shipping_rates`).
+- Cart endpoints en plural: `/api/v3/store/carts`.
+- Ransack en query params: `?q[taxons_id_eq]=<id>` (usar `curl -g`).
+- Traducciones (nombre/label de option types, taxons) son Mobility:
+  setear con `Mobility.with_locale(:es) { record.update!(label: "...") }`.
+  Evitar tildes en nombres de taxons (stringex revienta con encoding).
+- Precios del master variant: `set_price` no persiste; usar
+  `variant.prices.find_or_initialize_by(currency: "CLP")` y guardar. Un master
+  sin precio CLP produce el 422 engañoso "X is not available in CLP" / `insufficient_stock`.
+- `ShippingMethod#display_on` acepta `"both"`, `"front_end"`, `"back_end"`.
+
+## Convenciones del repo
+
+- Rutas custom de API se agregan en `config/routes.rb` dentro de
+  `Spree::Core::Engine.add_routes` bajo `namespace :api > :v3 > :store`.
+- Admin en `/admin` (Devise scope separado `Spree::AdminUser`); root redirige ahí.
+- Plan de trabajo e íntems pendientes: ver `ROADMAP.md`.
