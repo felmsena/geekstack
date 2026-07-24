@@ -67,9 +67,14 @@ funcional. Los ítems marcados **[BUG]** son defectos confirmados en código exi
       firma, pagos duplicados) y `stock_locations_controller`. Ver
       `test/support/spree_test_helpers.rb` para los builders reutilizables de
       store/order/producto/stock/zona de test.
-- [ ] Test de integración del checkout API v3 completo (cart → address →
-      delivery → payment → complete) — es la documentación viva del flujo.
-      Pendiente: mayor esfuerzo que los anteriores (delivery rates, fulfillments).
+- [x] Test de integración del checkout API v3 completo (cart → item →
+      address → delivery rate → preferencia MercadoPago → webhook →
+      order completado): `test/integration/api_v3_checkout_flow_test.rb`.
+      Documenta hallazgos: no existe `GET fulfillments#index` (los fulfillments
+      vienen embebidos en el payload del carrito), el `id` del carrito para las
+      rutas es el prefijado (`cart["id"]`, no `cart["number"]`), y Spree
+      geocodea la dirección de envío vía Nominatim en un job en background
+      (hay que stubearlo con WebMock en tests que usan `perform_enqueued_jobs`).
 - [x] CI (GitHub Actions): ya existía `.github/workflows/ci.yml` (scaffold de
       `rails new`) con `bin/rails test` + `brakeman` + `bundler-audit` +
       `rubocop`, con Postgres real. No se creó nada nuevo, solo se verificó.

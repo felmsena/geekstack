@@ -90,4 +90,14 @@ module SpreeTestHelpers
 
     [ location, zone, state ]
   end
+
+  # Flat-rate (default $0) shipping method available to a zone/category, so
+  # Spree::Stock::Estimator can produce a delivery rate during checkout.
+  def create_test_shipping_method(zone:, shipping_category:, amount: 0)
+    method = Spree::ShippingMethod.create!(
+      name: "Standard", zones: [ zone ], shipping_categories: [ shipping_category ], display_on: "both",
+      calculator: Spree::Calculator::Shipping::FlatRate.new(preferred_amount: amount, preferred_currency: "CLP")
+    )
+    method
+  end
 end
