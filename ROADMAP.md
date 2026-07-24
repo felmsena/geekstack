@@ -82,9 +82,14 @@ funcional. Los ítems marcados **[BUG]** son defectos confirmados en código exi
       `includes(zone_members: :zoneable)` en vez de una query por location.
 - [x] Extraída la convención `"stock_location:<id>"` a
       `Geekstack::StoreZone.description_for`/`.location_id_from`.
-- [ ] Seeds idempotentes para desarrollo: tiendas, zonas, métodos de envío,
-      método de pago MP con credenciales dummy — hoy todo eso vive solo en la BD
-      local y no es reproducible.
+- [x] Seeds idempotentes para desarrollo (`db/seeds.rb`): store GeekStack,
+      IVA 19%, StockLocations Providencia/La Florida + sus zonas de despacho
+      (comunas reales), zona nacional Chile, shipping methods (despacho por
+      tienda, envío nacional, retiro en tienda), Transferencia bancaria y
+      MercadoPago (sin credenciales — hay que setearlas después). Nota: Carmen
+      (la fuente de datos de `Spree::Seeds::States`) solo modela Chile a nivel
+      de región, no de comuna — las comunas se crean como `Spree::State` planos,
+      igual que ya hacía `create_test_stock_location_with_commune` en tests.
 - [x] Fixeado el warning de deprecación `Spree::DefaultPrice`: `create_test_product`
       ahora usa `variant.set_price("CLP", amount)` y `add_line_item` lee
       `variant.price_in("CLP").amount` en vez de asignar/leer `price:` directo.
