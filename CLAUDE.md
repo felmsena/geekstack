@@ -17,6 +17,12 @@ separado en `/Users/felipe/GIT/Personal/NextJS/geekstack` (cliente API en
 - Solid Queue / Solid Cache / Solid Cable (todo en Postgres)
 - Deploy: Render free tier (`render.yaml`) — 512 MB RAM, por eso
   `WEB_CONCURRENCY=1` y `RAILS_MAX_THREADS=2`. No subir esos valores sin cambiar de plan.
+- **`config/credentials.yml.enc` está pineado a la `master.key` local de este
+  repo.** No re-encriptar el archivo con una master key distinta (p.ej. para
+  probar un deploy alternativo como Openship) — eso rompe `bin/rails` para
+  cualquiera que tenga la key original, con `ActiveSupport::MessageEncryptor::InvalidMessage`.
+  Si un entorno de deploy nuevo necesita las credenciales, pásale la misma
+  `master.key` vía `RAILS_MASTER_KEY` (env var), no generes un `.enc` nuevo.
 - Tests: Minitest (`bin/rails test`) + WebMock (mockea las llamadas HTTP a
   MercadoPago, ver `test/support/spree_test_helpers.rb` para los builders de
   store/order/producto/stock de test). Brakeman, bundler-audit y RuboCop
