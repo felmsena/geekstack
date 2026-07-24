@@ -39,12 +39,12 @@ gem "image_processing", "~> 1.2"
 
 # Spree Commerce
 gem "devise"
-# Pinned to the 5.4.x line on purpose: the 5.5 upgrade is a deliberate,
-# separate step (see ROADMAP.md Fase 3) so it isn't pulled in accidentally
-# by an unrelated `bundle update`.
-gem "spree", "~> 5.4.2"
-gem "spree_admin", "~> 5.4.2"
-gem "spree_emails", "~> 5.4.2"
+# Pinned to a patch version on purpose so an unrelated `bundle update`
+# doesn't jump minor versions by itself (see ROADMAP.md Fase 3 for the
+# next deliberate upgrade).
+gem "spree", "~> 5.5.4"
+gem "spree_admin", "~> 5.5.4"
+gem "spree_emails", "~> 5.5.4"
 gem "spree_i18n"
 
 group :development do

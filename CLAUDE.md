@@ -1,19 +1,30 @@
 # Geekstack — Backend Spree (headless)
 
 Tienda chilena de juegos de mesa y productos geek. Este repo es **solo el backend**:
-Rails 8.1 + Spree 5.4.x expuesto vía API v3. El frontend es un proyecto Next.js
+Rails 8.1 + Spree 5.5.x expuesto vía API v3. El frontend es un proyecto Next.js
 separado en `/Users/felipe/GIT/Personal/NextJS/geekstack` (cliente API en
-`src/lib/spree.ts` de ese repo).
+`src/lib/spree.ts` de ese repo) — **pendiente**: ese repo debe subir `@spree/sdk`
+a `1.1+` para ser compatible con esta versión de Spree (ver Fase 3 del ROADMAP).
 
 ## Stack y entorno
 
 - Ruby 3.4.8 (asdf, ver `.tool-versions` — asdf 0.20 no lee `.ruby-version` sin
   `legacy_version_file` en `~/.asdfrc`, por eso el `.tool-versions` del proyecto)
   · Rails 8.1 · PostgreSQL
-- Spree 5.4.x — **pineado a propósito** (`~> 5.4.2`, no `~> 5.4`) para que un
-  `bundle update` suelto no arrastre la migración a 5.5, que es un paso
-  deliberado y grande (ver ROADMAP.md Fase 3). `spree_admin`, `spree_emails`,
-  `spree_i18n` + Devise.
+- Spree 5.5.x — **pineado a propósito** (`~> 5.5.4`, no `~> 5.5`) para que un
+  `bundle update` suelto no arrastre la migración a 5.6 sin decidirlo. `spree_admin`,
+  `spree_emails`, `spree_i18n` + Devise.
+- **Stock Reservations** (nuevo en 5.5): retiene stock durante el checkout.
+  Requiere un job programado (`Spree::StockReservations::ExpireJob`, cada
+  minuto) o las reservas expiradas se acumulan sin limpiarse — ya está en
+  `config/recurring.yml`. No customizamos Order Routing (Coordinator/Packer/
+  Prioritizer), así que el cambio de estrategia por defecto en 5.5 no afecta
+  código propio.
+- `Spree::Product#stores=`/`#stores` están deprecados desde 5.5 (ahora es
+  `store`/`store_id`, singular — multi-store real requiere la gema
+  `spree_multi_store`, que no usamos). Usar siempre `store:` singular en
+  código nuevo. `Spree::PaymentMethod#stores=` (through `StorePaymentMethod`)
+  es una asociación distinta y sigue igual, sin deprecar.
 - Solid Queue / Solid Cache / Solid Cable (todo en Postgres)
 - Deploy: Render free tier (`render.yaml`) — 512 MB RAM, por eso
   `WEB_CONCURRENCY=1` y `RAILS_MAX_THREADS=2`. No subir esos valores sin cambiar de plan.

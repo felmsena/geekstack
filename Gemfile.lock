@@ -259,7 +259,7 @@ GEM
     msgpack (1.8.3)
     name_of_person (1.1.3)
       activesupport (>= 5.2.0)
-    net-imap (0.6.4.1)
+    net-imap (0.6.6)
       date
       net-protocol
     net-pop (0.1.2)
@@ -445,10 +445,10 @@ GEM
       fugit (~> 1.11)
       railties (>= 7.1)
       thor (>= 1.3.1)
-    spree (5.4.4)
-      spree_api (= 5.4.4)
-      spree_core (= 5.4.4)
-    spree_admin (5.4.4)
+    spree (5.5.4)
+      spree_api (= 5.5.4)
+      spree_core (= 5.5.4)
+    spree_admin (5.5.4)
       active_link_to
       breadcrumbs_on_rails (~> 4.1)
       chartkick (~> 5.0)
@@ -459,18 +459,18 @@ GEM
       local_time (~> 3.0)
       mapkick-rb (~> 0.1)
       ruby-oembed (~> 0.18)
-      spree (>= 5.4.4)
+      spree (>= 5.5.4)
       stimulus-rails
       tailwindcss-rails (>= 4.0)
       tailwindcss-ruby (>= 4.0)
       tinymce-rails (~> 6.8.5)
       turbo-rails
-    spree_api (5.4.4)
+    spree_api (5.5.4)
       alba (~> 3.0)
       oj (~> 3.16)
-      spree_core (= 5.4.4)
+      spree_core (= 5.5.4)
       typelizer (~> 0.11.0)
-    spree_core (5.4.4)
+    spree_core (5.5.4)
       active_storage_validations (>= 1.3, < 4)
       acts-as-taggable-on
       acts_as_list (>= 0.8)
@@ -509,15 +509,15 @@ GEM
       tracking_number
       validates_zipcode
       wannabe_bool
-    spree_emails (5.4.4)
-      spree (>= 5.4.4)
+    spree_emails (5.5.4)
+      spree (>= 5.5.4)
     spree_extension (1.0.2)
       thor (~> 1.0)
-    spree_i18n (5.3.2)
+    spree_i18n (5.3.3)
       i18n_data
       kaminari-i18n
       rails-i18n
-      spree_core (>= 4.2.0.rc3)
+      spree_core (>= 5.4.0.alpha)
       spree_extension
     sqids (0.2.2)
     ssrf_filter (1.5.0)
@@ -620,9 +620,9 @@ DEPENDENCIES
   solid_cable
   solid_cache
   solid_queue
-  spree (~> 5.4.2)
-  spree_admin (~> 5.4.2)
-  spree_emails (~> 5.4.2)
+  spree (~> 5.5.4)
+  spree_admin (~> 5.5.4)
+  spree_emails (~> 5.5.4)
   spree_i18n
   stimulus-rails
   thruster
@@ -731,7 +731,7 @@ CHECKSUMS
   money (6.19.0) sha256=ec936fa1e42f2783719241ed9fd52725d0efa628f928feea1eb5c37d5de7daf3
   msgpack (1.8.3) sha256=8bda4a6428d3244e50d6bd55854d354edbada88a4e1f4f5731a39a0f86bee6a1
   name_of_person (1.1.3) sha256=e12291250987ef79c413314f698f15d53e7a602c42231de99c276ef9585bc18c
-  net-imap (0.6.4.1) sha256=29f0360d75a7efd3539f16ac1957dea5c0a51ddeceb348db4553c3120914ea0d
+  net-imap (0.6.6) sha256=96aa4ee50df3060203e649efc341f53480b791d49e150f2fdebf68beb141a8df
   net-pop (0.1.2) sha256=848b4e982013c15b2f0382792268763b748cce91c9e91e36b0f27ed26420dff3
   net-protocol (0.2.2) sha256=aa73e0cba6a125369de9837b8d8ef82a61849360eba0521900e2c3713aa162a8
   net-smtp (0.5.1) sha256=ed96a0af63c524fceb4b29b0d352195c30d82dd916a42f03c62a3a70e5b70736
@@ -802,13 +802,13 @@ CHECKSUMS
   solid_cable (3.0.12) sha256=a168a54731a455d5627af48d8441ea3b554b8c1f6e6cd6074109de493e6b0460
   solid_cache (1.0.10) sha256=bc05a2fb3ac78a6f43cbb5946679cf9db67dd30d22939ededc385cb93e120d41
   solid_queue (1.4.0) sha256=e6a18d196f0b27cb6e3c77c5b31258b05fb634f8ed64fb1866ed164047216c2a
-  spree (5.4.4) sha256=26b26d3f9811fe6a830d3bb434a098d6764422803f0d036333e441dd93ee8afd
-  spree_admin (5.4.4) sha256=437ac8ce0e426157a6343a6692e75614d681fb11af3044f6ed07fa9cec2047e3
-  spree_api (5.4.4) sha256=31031fd344681fff48b4d1b4cad338963660b2428f8562101370cca0f0c3cc70
-  spree_core (5.4.4) sha256=57340235f5721068c30ae4a8da9d7e0c32022973b877550740cc560ec3c52a1e
-  spree_emails (5.4.4) sha256=880bc0925891f31ce6c4bebf4f51702be96da6ba39455ab5dcb0f75fc2fbc980
+  spree (5.5.4) sha256=486110b4e65134297c8d239ee04960c8fc12996e56eb9ffb10b7762e2475d7f6
+  spree_admin (5.5.4) sha256=5c93ca9c1d901ac8badcdccdd2dc759f6eb226fb0534b41e7fd4e188d894d7cb
+  spree_api (5.5.4) sha256=f13b876ca89db308dbe0a69cb531a6189fefc4a4b8ef464118560e405ea3d566
+  spree_core (5.5.4) sha256=a15ce39247d85d2a322805e04cbf80c86dbbd9cb333ef1bbe3eed3394c83af1d
+  spree_emails (5.5.4) sha256=2661dbbe558e320ff50de97b3910e22cb1d0c2ff608ce26bdec5be0e661e203e
   spree_extension (1.0.2) sha256=71725dafe45319a2be1bd2b564a416afe8029af8e18ac703bdb835e09553e1df
-  spree_i18n (5.3.2) sha256=03b805235ca156644951f6bc3d07cbe43d0aa01134c4a27e3f3304011956f79b
+  spree_i18n (5.3.3) sha256=e2b75d3174a70d626503827e7fefb3595f92ee41e356dd05a066ced39d562102
   sqids (0.2.2) sha256=c2d31e0dfb6c32d17c10b59df059a299af93bef716d700ff70d77156df702d36
   ssrf_filter (1.5.0) sha256=e03dcdb9d1730d7f6710532a606b3543df2a448a0293ce04a2d995523c5a97f6
   state_machines (0.202.0) sha256=20db5367b4541155fc6d764f8ba54182ba6d49ceac7d917598709a61143a16e1

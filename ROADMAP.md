@@ -107,21 +107,39 @@ Stock Reservations y Order Routing avanzado (útil para el despacho multi-tienda
 de la Fase 4b). Son 500+ commits sobre 5.4 — hacer el upgrade **después** de
 tener tests (Fase 2), que son la red de seguridad de la migración.
 
-- [ ] Leer release notes y guía de upgrade oficial:
-      https://github.com/spree/spree/releases/tag/v5.5.0
-- [ ] Subir `spree`, `spree_admin`, `spree_emails` a `~> 5.5` (verificar que
-      `spree_i18n` tenga release compatible), `bundle update`, correr
-      migraciones nuevas (`rails spree:install:migrations && rails db:migrate`).
-- [ ] Verificar que el código custom sobrevive: `PaymentMethod::MercadoPago`,
-      controllers custom bajo `Spree::Api::V3::Store`, la convención de zonas
-      `stock_location:<id>`, y las rutas en `Spree::Core::Engine.add_routes`.
-- [ ] Correr la suite de integración del checkout (Fase 2) contra 5.5 y probar
-      el front sin cambios — la API v3 Store no debería romper, confirmarlo.
+- [x] Leer release notes y guía de upgrade oficial (5.4→5.5): sin cambios que
+      rompan nuestro código, salvo dos deprecaciones menores (ver abajo).
+- [x] Subida `spree`/`spree_admin`/`spree_emails` a `~> 5.5.4` (`spree_i18n`
+      5.3.3 es compatible, acepta `spree_core >= 5.4.0.alpha`). `bundle update`
+      solo movió los gems de Spree + `net-imap` (dependencia transitiva).
+- [x] Migraciones nuevas aplicadas (`spree:install:migrations && db:migrate`,
+      19 migraciones: Channels, Order Routing Rules, Stock Reservations,
+      Variant Media, columnas nuevas en orders/products/stock_locations, etc.)
+      + backfills obligatorios (`spree:upgrade` → `spree:channels:upgrade` →
+      `spree:search:reindex`, en ese orden — si se corre el reindex antes del
+      backfill de canales, todos los productos quedan con `store_id NULL` y
+      desaparecen del catálogo).
+- [x] Agregado el job programado que pide la guía oficial de upgrade:
+      `Spree::StockReservations::ExpireJob` cada minuto en `config/recurring.yml`
+      (Solid Queue) — si no se agenda, las reservas de stock expiradas del
+      checkout nunca se limpian.
+- [x] Verificado que el código custom sobrevive: `PaymentMethod::MercadoPago`
+      (el cambio de serialización del atributo `type` en la Admin API es solo
+      de cara al wire, no toca la columna STI real), controllers custom bajo
+      `Spree::Api::V3::Store`, la convención de zonas `stock_location:<id>`, y
+      el test de integración del checkout completo (Fase 2) — todo pasa sin
+      cambios. Único ajuste real: `Spree::Product#stores=` está deprecado
+      (ahora `store=` singular) — actualizado en `spree_test_helpers.rb`.
+      No usamos Order Routing custom (Coordinator/Packer/Prioritizer), así que
+      el cambio de estrategia por defecto en 5.5 no nos afecta.
+- [x] `db/seeds.rb` verificado idempotente contra el schema post-upgrade.
+      Brakeman, `bundle-audit` y RuboCop limpios.
 - [ ] Evaluar adoptar lo nuevo de 5.5 donde reemplaza código propio:
       **Order Routing** podría sustituir/simplificar la lógica de zonas por
       tienda; **Sales Channels** si algún día hay más de un canal de venta.
-- [ ] Evaluar migrar el front al SDK TypeScript oficial (`@spree/sdk`) en vez
-      del cliente manual `src/lib/spree.ts`.
+- [ ] **Frontend (repo separado)**: subir `@spree/sdk` a `1.1+` — requerido por
+      la guía oficial de upgrade para consumidores JS. Evaluar migrar el
+      cliente manual `src/lib/spree.ts` al SDK TypeScript oficial.
 
 ## Fase 4 — Completar los flujos de ecommerce
 

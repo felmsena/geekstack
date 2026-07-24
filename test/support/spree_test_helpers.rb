@@ -39,7 +39,7 @@ module SpreeTestHelpers
     end
 
     product = Spree::Product.create!(
-      name: "Test Game", shipping_category: shipping_category, stores: [ store ], status: "active"
+      name: "Test Game", shipping_category: shipping_category, store: store, status: "active"
     )
     product.master.set_price("CLP", price)
     product.master.stock_items.find_or_create_by!(stock_location: stock_location) do |si|

@@ -13,3 +13,14 @@ production:
   clear_solid_queue_finished_jobs:
     command: "SolidQueue::Job.clear_finished_in_batches(sleep_between_batches: 0.3)"
     schedule: every hour at minute 12
+  # Spree 5.5 Stock Reservations soft-hold stock during checkout but don't
+  # release themselves — Spree's own upgrade guide says this must be
+  # scheduled manually or expired reservation rows just pile up.
+  expire_stock_reservations:
+    class: Spree::StockReservations::ExpireJob
+    schedule: every minute
+
+development:
+  expire_stock_reservations:
+    class: Spree::StockReservations::ExpireJob
+    schedule: every minute
