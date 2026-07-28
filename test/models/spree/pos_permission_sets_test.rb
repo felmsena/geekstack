@@ -23,6 +23,13 @@ class Spree::PosPermissionSetsTest < ActiveSupport::TestCase
     assert_not ability.can?(:void, Spree::Payment)
   end
 
+  test "cashier can read channels (needed to look up the pos channel_id for order creation)" do
+    ability = ability_for(@cashier_role)
+
+    assert ability.can?(:read, Spree::Channel)
+    assert_not ability.can?(:update, Spree::Channel)
+  end
+
   test "cashier can complete an order but not cancel, approve, or resume it" do
     ability = ability_for(@cashier_role)
 

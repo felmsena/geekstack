@@ -28,6 +28,12 @@ module Spree
         can [ :read, :admin, :index ], Spree::StockLocation
         can [ :read, :admin, :index ], Spree::StockItem
         can [ :read, :admin, :index ], Spree::PaymentMethod
+        # Needed so the POS can look up the "pos" Spree::Channel's id
+        # (GET /admin/channels?q[code_eq]=pos) to send as `channel_id` when
+        # creating an order — without it, orders default to the "online"
+        # channel and never get Spree::OrderDecorator's POS behavior
+        # (anonymous checkout, auto-assigned pickup address).
+        can [ :read, :admin, :index ], Spree::Channel
 
         can [ :read, :admin, :index ], Spree::Order
         can :create, Spree::Order
