@@ -220,6 +220,45 @@ como red de seguridad de ambos saltos).
       con instrucciones en el front y confirmación manual en admin).
 - [ ] Evaluar Webpay/Transbank o Fintoc según comisiones.
 
+### 4d. Soporte backend para el POS presencial (repo separado, Next.js)
+Tanda A del análisis de Fable (ver nota al inicio del roadmap). Todo verificado
+por curl end-to-end contra datos reales (producto, stock, dos locales).
+
+- [x] Método de pago "Efectivo": segunda instancia de `Spree::PaymentMethod::Check`
+      con `auto_capture: true` (mismo mecanismo que "Transferencia bancaria").
+- [x] Roles `cashier`/`supervisor` acotados (`Spree::PermissionSets::PosCashier`/
+      `PosSupervisor`) — allow-list explícito, sin `:manage` amplio. Requirió
+      decorar `Admin::OrdersController#authorize_resource!`: por defecto
+      colapsa `complete`/`cancel`/`approve`/`resume`/`resend_confirmation` en
+      una sola acción `:update`, lo que hacía imposible dar "completar" sin
+      dar también "cancelar".
+- [x] `POST /orders` con `preferred_stock_location_id` ya funcionaba, pero
+      **no bastaba solo con el parámetro**: sin una regla de Order Routing
+      (`Spree::OrderRouting::Rules::PreferredLocation`) para el canal, el
+      reducer siempre cae al stock location default de la tienda. Se creó
+      esa regla para el canal "POS" en los seeds.
+- [x] Venta anónima (sin email) para el canal POS (`Spree::OrderDecorator#require_email`).
+      Encontró un segundo gap real: sin `ship_address`, Spree no calcula
+      tarifas de envío (son por zona) y la orden nunca completa — se resolvió
+      asignando automáticamente la dirección del propio stock location como
+      `ship_address`/`bill_address` (con `quick_checkout: true` para saltar
+      nombre/calle/código postal).
+- [x] Idempotencia (`Idempotency-Key`) — ya viene en `spree_api` de fábrica,
+      solo se verificó.
+- [x] Sesión JWT — sin cambios, ya calza (access 5 min + refresh 30 días
+      rotando vía cookie httpOnly). Importante para el POS: el refresh es
+      **cookie, no body** — necesita `credentials: 'include'`.
+- [x] CORS (`rack-cors`) scoped a `/api/v3/admin/*`, `credentials: true`,
+      orígenes configurables por `POS_CORS_ORIGINS` (vacío hasta tener el
+      origen real del POS).
+- [x] `barcode` de `Spree::Variant` habilitado en Ransack (ya existía la
+      columna, faltaba el whitelist) para el lookup por código de barras.
+- [ ] **Bloqueado en Fable**: falta el origen de desarrollo del POS para
+      completar `POS_CORS_ORIGINS`.
+- [ ] Efectivo real vs. redondeo de vuelto: el cálculo de vuelto queda del
+      lado del POS, el backend solo registra el monto exacto — sin acción
+      pendiente acá salvo que cambie el acuerdo.
+
 ## Fase 5 — Producción
 
 - [ ] Storage de imágenes: ActiveStorage usa `:local` en producción — en Render

@@ -26,10 +26,22 @@ store.save!
 country = Spree::Country.find_by!(iso: "CL")
 country.update!(states_required: true)
 # Carmen (Spree's state-seeding data source) only models Chile at the region
-# level (RM, VS, BI...), not comunas — so unlike other countries, Chilean
-# comunas can't come from Spree::Seeds::States. They're created directly
-# below, as plain Spree::State rows, exactly like `create_test_stock_location_with_commune`
-# does in test/support/spree_test_helpers.rb.
+# level, is missing Ñuble (created 2018), and has no comuna data at all — so
+# unlike other countries, Chile can't come from Spree::Seeds::States (blocked
+# entirely for CL, see app/models/spree/seeds/states_decorator.rb). Instead we
+# seed the full official comuna list ourselves from Geekstack::ChileRegions,
+# one Spree::State per comuna with `region` set to its parent region's name —
+# the "padre" a flat, no-hierarchy Spree::State table can't otherwise express.
+Geekstack::ChileRegions::REGIONS.each do |region_name, comunas|
+  comunas.each do |comuna_name|
+    # `abbr` is globally unique across all countries, so a truncated prefix
+    # risks colliding with an unrelated state — use the full comuna name.
+    state = Spree::State.find_or_initialize_by(name: comuna_name, country: country)
+    state.abbr = comuna_name.upcase
+    state.region = region_name
+    state.save!
+  end
+end
 
 shipping_category = Spree::ShippingCategory.find_or_create_by!(name: "Default")
 
@@ -60,9 +72,16 @@ STORE_LOCATIONS = {
 }.freeze
 
 STORE_LOCATIONS.each do |location_name, comunas|
+  # The location's own comuna is always first in its list — used below as the
+  # StockLocation's `state`, so an auto-filled pickup address (POS retiro en
+  # tienda, see Spree::OrderDecorator) passes `states_required: true`
+  # validation instead of failing with "Provincia ... no puede estar en blanco".
+  home_state = Spree::State.find_by!(name: comunas.first, country: country)
+
   location = Spree::StockLocation.find_or_create_by!(name: location_name) do |sl|
     sl.active = true
     sl.country = country
+    sl.state = home_state
   end
 
   zone = Spree::Zone.find_or_create_by!(description: Geekstack::StoreZone.description_for(location)) do |z|
@@ -70,11 +89,7 @@ STORE_LOCATIONS.each do |location_name, comunas|
   end
 
   comunas.each do |comuna_name|
-    # `abbr` is globally unique across all countries, so a truncated prefix
-    # risks colliding with an unrelated state — use the full comuna name.
-    state = Spree::State.find_or_create_by!(name: comuna_name, country: country) do |s|
-      s.abbr = comuna_name.upcase
-    end
+    state = Spree::State.find_by!(name: comuna_name, country: country)
     zone.zone_members.find_or_create_by!(zoneable: state)
   end
 
@@ -112,3 +127,36 @@ end
 mercado_pago.preferred_access_token ||= ""
 mercado_pago.preferred_public_key   ||= ""
 mercado_pago.save!
+
+# Cash — same Check class as "Transferencia bancaria" (no source required,
+# always authorizes/captures), just a second instance with auto_capture on
+# so a presencial cash sale doesn't sit in a pending capture step.
+Spree::PaymentMethod::Check.find_or_create_by!(name: "Efectivo") do |pm|
+  pm.active = true
+  pm.store = store
+  pm.auto_capture = true
+end
+
+# --- POS (presencial sale) channel ------------------------------------------
+# Spree::OrderDecorator#require_email exempts orders on this channel (a
+# mesón sale can be legitimately anonymous). The PreferredLocation routing
+# rule is what actually makes `preferred_stock_location_id` on
+# `POST /orders` pick that location: Order Routing scopes rules per-channel
+# (order.channel.order_routing_rules), and with none configured the reducer
+# always falls back to the store's default StockLocation regardless of what
+# was requested.
+pos_channel = Spree::Channel.find_or_create_by!(code: Geekstack::PosChannel::CODE) do |c|
+  c.name = "POS"
+  c.store = store
+end
+Spree::OrderRouting::Rules::PreferredLocation.find_or_create_by!(channel: pos_channel) do |rule|
+  rule.store = store
+end
+
+# --- Roles para el POS -------------------------------------------------------
+# Los permission sets viven en app/models/spree/permission_sets/pos_*.rb y se
+# asignan a estos roles en config/initializers/spree.rb. Solo se crea el rol
+# acá (dato de config, seguro para producción); usuarios de prueba con estos
+# roles se crean a mano en desarrollo — ver CLAUDE.md.
+Spree::Role.find_or_create_by!(name: "cashier")
+Spree::Role.find_or_create_by!(name: "supervisor")

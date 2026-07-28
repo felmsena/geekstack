@@ -47,6 +47,9 @@ gem "spree_admin", "~> 5.6.0"
 gem "spree_emails", "~> 5.6.0"
 gem "spree_i18n"
 
+# CORS for the presencial-sale (POS) client — Admin API only, see config/initializers/cors.rb
+gem "rack-cors"
+
 group :development do
   gem "listen", ">= 3.0"
 end

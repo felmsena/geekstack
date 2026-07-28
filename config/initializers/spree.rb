@@ -90,6 +90,10 @@ Rails.application.config.after_initialize do
   Spree.permissions.assign(:default, [Spree::PermissionSets::DefaultCustomer])
   Spree.permissions.assign(:admin, [Spree::PermissionSets::SuperUser])
 
+  # Presencial-sale (POS) roles — see app/models/spree/permission_sets/pos_*.rb
+  Spree.permissions.assign(:cashier, [ Spree::PermissionSets::PosCashier ])
+  Spree.permissions.assign(:supervisor, [ Spree::PermissionSets::PosSupervisor ])
+
   # Example: Create a custom role with specific permissions
   # Spree.permissions.assign(:customer_service, [
   #   Spree::PermissionSets::DashboardDisplay,

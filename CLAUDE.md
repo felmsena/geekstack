@@ -60,7 +60,11 @@ bin/rails runner '...'    # consultas puntuales contra la BD de desarrollo
   una `Spree::Zone` mediante la convención `zone.description == "stock_location:<id>"`,
   encapsulada en `Geekstack::StoreZone` (`description_for`/`location_id_from` —
   no hardcodear el string en código nuevo). Los miembros de la zona son las
-  comunas (states de Chile) donde esa tienda despacha. El endpoint custom
+  comunas (states de Chile) donde esa tienda despacha, tomadas del set
+  completo de 346 comunas que `db/seeds.rb` siembra desde
+  `Geekstack::ChileRegions` (cada `Spree::State` de Chile tiene `region` con
+  el nombre de su región — ver gotcha de `Spree::Seeds::States` más abajo
+  sobre por qué esto no viene de Spree/Carmen). El endpoint custom
   `GET /api/v3/store/stock_locations` expone tienda + comunas.
   Para agregar una tienda: crear StockLocation + Zone con esa descripción + ShippingMethod.
 - IVA 19% configurado como tax rate por defecto.
@@ -101,6 +105,13 @@ archivo no define esa constante, Rails revienta con
 | `app/jobs/spree/mercado_pago/webhook_job.rb` | Procesa webhooks en background |
 | `app/controllers/spree/api/v3/store/mercado_pago_controller.rb` | `POST carts/:cart_id/mercado_pago/preference` y `POST mercado_pago/webhook` |
 | `app/controllers/spree/api/v3/store/stock_locations_controller.rb` | Tiendas + comunas para el front |
+| `app/models/spree/seeds/states_decorator.rb` | Evita que Spree siembre regiones de Chile (choca con nuestras comunas) |
+| `app/services/geekstack/chile_regions.rb` | Las 346 comunas oficiales agrupadas por sus 16 regiones — fuente de `db/seeds.rb` |
+| `app/models/spree/permission_sets/pos_cashier.rb`, `pos_supervisor.rb` | Roles acotados para el POS presencial (ver ROADMAP Fase 4d) |
+| `app/models/spree/order_decorator.rb` | Venta POS anónima (sin email) + dirección de retiro auto-asignada desde el stock location |
+| `app/models/spree/variant_decorator.rb` | Habilita `barcode` en Ransack (búsqueda por código de barras del POS) |
+| `app/controllers/spree/api/v3/admin/orders_controller_decorator.rb` | No colapsa `complete`/`cancel`/`approve`/`resume` en una sola acción `:update` de CanCan |
+| `app/services/geekstack/pos_channel.rb` | Código del `Spree::Channel` "POS", compartido entre seeds y el decorator de `Order` |
 
 Los servicios viven bajo `Geekstack::` (no `Spree::`) porque Zeitwerk choca con el
 namespace del gem. `app/services/geekstack/mercado_pago.rb` existe solo para
@@ -174,6 +185,30 @@ Detalles de robustez (agregados tras testear el flujo, ver tests en
   `variant.prices.find_or_initialize_by(currency: "CLP")` y guardar. Un master
   sin precio CLP produce el 422 engañoso "X is not available in CLP" / `insufficient_stock`.
 - `ShippingMethod#display_on` acepta `"both"`, `"front_end"`, `"back_end"`.
+- **`Spree::Seeds::States` (el seed nativo de regiones, basado en Carmen) está
+  deshabilitado para Chile** vía `app/models/spree/seeds/states_decorator.rb`.
+  Carmen para Chile solo tiene 15 regiones **planas, sin comunas** (`Carmen::
+  Country.named("Chile").subregions` no tiene `subregions` propias — ni
+  siquiera incluye Ñuble, creada en 2018), así que no sirve como fuente de
+  comunas. Peor: `Spree::State` es una tabla plana (sin concepto de "región"
+  vs "comuna") con `name` único por país, y varias regiones chilenas
+  comparten nombre exacto con su comuna capital (Antofagasta, Valparaíso) —
+  si esa comuna ya existe (nosotros solo sembramos a nivel comuna) y luego
+  corre el seed nativo de regiones, choca por nombre duplicado y `db:seed`
+  revienta con `Name has already been taken` en **cualquier corrida
+  posterior a la primera** (la primera corrida no falla porque
+  `states_required` todavía es `false` en ese momento; el seed nativo solo se
+  activa cuando ya está en `true`, lo que persiste desde la corrida
+  anterior). El decorator hace que Spree nunca toque Chile a nivel Carmen —
+  no perdemos nada real porque Carmen no tenía comunas de todas formas.
+- **Las 346 comunas oficiales (16 regiones) están en
+  `Geekstack::ChileRegions::REGIONS`** (transcritas a mano desde
+  SUBDERE/INE — conviene revisarlas contra una fuente oficial antes de
+  confiar en ellas más allá de dev/zonas de despacho), y `db/seeds.rb` las
+  siembra todas como `Spree::State`, una por comuna, con `region` seteado al
+  nombre de la región — el "padre" que la tabla plana de Spree no modela por
+  sí sola. Las zonas de despacho (`STORE_LOCATIONS`) solo referencian un
+  subconjunto de esas comunas por nombre (`find_by!`, ya no las crean).
 
 ## Gotchas de testing (aprendidos a golpes)
 
