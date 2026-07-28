@@ -3,6 +3,13 @@
 Estado al 2026-07-08. Orden por prioridad; cada fase deja el sistema en un estado
 funcional. Los ítems marcados **[BUG]** son defectos confirmados en código existente.
 
+**Proyecto relacionado (repo separado, no parte de este roadmap):** interfaz de
+venta presencial (POS) en Next.js/TypeScript/Tailwind, consumiendo la Admin API
+v3 de este backend (`/api/v3/admin/*` — órdenes, pagos, stock, clientes, etc.).
+Locales físicos (`Spree::StockLocation`) 100% configurables desde el admin de
+Spree, sin cantidad fija asumida por el POS. Aún en fase de análisis/roadmap
+propio con Fable — este repo solo provee la API que consume.
+
 ---
 
 ## Fase 0 — Recuperar y consolidar (bloqueante, hacer primero)
@@ -175,6 +182,14 @@ como red de seguridad de ambos saltos).
 
 ### 4a. Cuentas de usuario
 - [x] Registro (`POST /customers`) y login JWT (`POST /auth/login`) funcionando.
+- [x] **RUT chileno obligatorio y único en `Spree::User`**: columna `rut` +
+      índice único, `ChileanRutValidator` (formato + dígito verificador módulo
+      11), normalización automática antes de guardar (quita puntos/espacios,
+      agrega guión si falta, mayúscula en "K") vía decorator del modelo.
+      Aceptado y expuesto en `POST/PATCH /api/v3/store/customers` y en la
+      Admin API (`/api/v3/admin/customers`), serializado en ambas respuestas.
+      Primer uso en el repo del patrón de decorators de Spree (`*_decorator.rb`,
+      cargados por el glob en `config/application.rb`) — ver CLAUDE.md.
 - [ ] Recuperación de contraseña end-to-end (`POST /password_resets` existe;
       falta configurar mailer + página en el front).
 - [ ] Configurar envío de emails reales (SMTP/Resend/Postmark) —

@@ -64,11 +64,37 @@ bin/rails runner '...'    # consultas puntuales contra la BD de desarrollo
   `GET /api/v3/store/stock_locations` expone tienda + comunas.
   Para agregar una tienda: crear StockLocation + Zone con esa descripción + ShippingMethod.
 - IVA 19% configurado como tax rate por defecto.
+- **Todo `Spree::User` requiere un RUT chileno único** (`rut`, índice único).
+  Validado con `ChileanRutValidator` (formato + dígito verificador módulo 11)
+  y normalizado antes de guardar (`Spree::UserDecorator#normalize_rut`: quita
+  puntos/espacios, agrega el guión si falta, sube "k" a "K") — así
+  `"12.345.678-5"`, `"12345678-5"` y `"123456785"` terminan siendo el mismo
+  registro. Se acepta/expone en `POST/PATCH /api/v3/store/customers` y en
+  `/api/v3/admin/customers` (ambos decorados para permitir el param; el
+  serializer base `Spree::Api::V3::CustomerSerializer` lo expone en ambas
+  respuestas, ya que el admin serializer hereda del store). No aplica a
+  `Spree::AdminUser` (staff interno), solo a clientes.
+
+## Decorators (patrón para extender clases de Spree)
+
+Primer uso en este repo (RUT de usuario). Un archivo con `_decorator` en el
+nombre bajo `app/**` se carga explícitamente por un glob en
+`config/application.rb` (mismo mecanismo que usa `spree_core` internamente),
+**fuera** de las reglas normales de Zeitwerk. Por eso el archivo debe definir
+igual el módulo/clase que Zeitwerk esperaría por su ruta (p. ej.
+`app/models/spree/user_decorator.rb` → `module Spree::UserDecorator`) aunque
+después se use `prepend`/`class_eval` para modificar la clase real — si el
+archivo no define esa constante, Rails revienta con
+`Zeitwerk::NameError: expected file ... to define constant ...` al bootear.
 
 ## Código custom (todo lo que no es Spree vanilla)
 
 | Ruta | Qué es |
 |---|---|
+| `app/models/spree/user_decorator.rb` | Normaliza y valida el RUT chileno en `Spree::User` |
+| `app/validators/chilean_rut_validator.rb` | Formato + dígito verificador (módulo 11) de un RUT |
+| `app/controllers/spree/api/v3/{store,admin}/customers_controller_decorator.rb` | Permiten el param `rut` en alta/edición de clientes |
+| `app/serializers/spree/api/v3/customer_serializer_decorator.rb` | Expone `rut` en las respuestas de cliente |
 | `app/models/spree/payment_method/mercado_pago.rb` | PaymentMethod sin source (`source_required? == false`); credenciales MP como `preferences` |
 | `app/services/geekstack/mercado_pago/create_preference.rb` | POST a `api.mercadopago.com/checkout/preferences`, devuelve `init_point` |
 | `app/services/geekstack/mercado_pago/process_payment.rb` | Consulta `/v1/payments/:id` y actualiza el pago Spree |

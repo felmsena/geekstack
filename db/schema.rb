@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_28_055142) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_28_062653) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -2028,6 +2028,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_28_055142) do
     t.string "remember_token"
     t.datetime "reset_password_sent_at", precision: nil
     t.string "reset_password_token"
+    t.string "rut"
     t.string "selected_locale"
     t.bigint "ship_address_id"
     t.integer "sign_in_count", default: 0, null: false
@@ -2035,6 +2036,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_28_055142) do
     t.datetime "updated_at", null: false
     t.index ["accepts_email_marketing"], name: "index_spree_users_on_accepts_email_marketing"
     t.index ["bill_address_id"], name: "index_spree_users_on_bill_address_id"
+    t.index ["rut"], name: "index_spree_users_on_rut", unique: true
     t.index ["ship_address_id"], name: "index_spree_users_on_ship_address_id"
   end
 
