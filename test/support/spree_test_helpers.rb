@@ -68,6 +68,17 @@ module SpreeTestHelpers
     Spree::ApiKey.create!(name: "Test key", key_type: "publishable", store: store)
   end
 
+  # Valid, arbitrary Chilean RUT (correct modulo-11 check digit) — every
+  # Spree::User requires one, see ChileanRutValidator.
+  def create_test_customer(rut: "12345678-5", password: "password123", **attrs)
+    Spree::User.create!({
+      email: "customer_#{SecureRandom.hex(4)}@example.com",
+      password: password,
+      password_confirmation: password,
+      rut: rut
+    }.merge(attrs))
+  end
+
   # Builds a StockLocation linked to a Zone via the "stock_location:<id>"
   # description convention, with a single commune (State) as a zone member.
   def create_test_stock_location_with_commune(commune_name: "Providencia")
@@ -77,6 +88,10 @@ module SpreeTestHelpers
       c.iso3 = "CHL"
       c.numcode = 152
       c.states_required = true
+      # Mirrors db/seeds.rb: postal_code is basically unused in Chile, so
+      # Spree::Address#require_zipcode? must be false or every address
+      # (checkout, saved customer addresses) is rejected without one.
+      c.zipcode_required = false
     end
     state = Spree::State.find_or_create_by!(name: commune_name, country: country) do |s|
       s.abbr = commune_name[0, 4].upcase

@@ -24,7 +24,10 @@ store.assign_attributes(
 store.save!
 
 country = Spree::Country.find_by!(iso: "CL")
-country.update!(states_required: true)
+# postal_code is basically unused in Chilean addresses day-to-day; without
+# this, Spree::Address (native `zipcode_required?`) rejects every address
+# missing one — including customer-saved addresses (4a) and guest checkout.
+country.update!(states_required: true, zipcode_required: false)
 # Carmen (Spree's state-seeding data source) only models Chile at the region
 # level, is missing Ñuble (created 2018), and has no comuna data at all — so
 # unlike other countries, Chile can't come from Spree::Seeds::States (blocked

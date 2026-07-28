@@ -1,4 +1,6 @@
 Rails.application.routes.draw do
+  mount LetterOpenerWeb::Engine, at: "/letter_opener" if Rails.env.development?
+
   Spree::Core::Engine.add_routes do
     namespace :api, defaults: { format: :json } do
       namespace :v3 do

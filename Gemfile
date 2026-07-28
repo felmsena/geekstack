@@ -52,6 +52,12 @@ gem "rack-cors"
 
 group :development do
   gem "listen", ">= 3.0"
+
+  # Intercepts outgoing mail instead of sending it — lets us test password_reset
+  # and other spree_emails flows without real SMTP. letter_opener_web mounts a
+  # route to browse captured emails (works headless, no local GUI browser needed).
+  gem "letter_opener"
+  gem "letter_opener_web"
 end
 
 group :development, :test do
