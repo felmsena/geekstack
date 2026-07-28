@@ -102,12 +102,12 @@ end
 
 Spree::PaymentMethod::Check.find_or_create_by!(name: "Transferencia bancaria") do |pm|
   pm.active = true
-  pm.stores = [ store ]
+  pm.store = store
 end
 
 mercado_pago = Spree::PaymentMethod::MercadoPago.find_or_create_by!(name: "MercadoPago") do |pm|
   pm.active = true
-  pm.stores = [ store ]
+  pm.store = store
 end
 mercado_pago.preferred_access_token ||= ""
 mercado_pago.preferred_public_key   ||= ""

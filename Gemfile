@@ -40,11 +40,11 @@ gem "image_processing", "~> 1.2"
 # Spree Commerce
 gem "devise"
 # Pinned to a patch version on purpose so an unrelated `bundle update`
-# doesn't jump minor versions by itself (see ROADMAP.md Fase 3 for the
-# next deliberate upgrade).
-gem "spree", "~> 5.5.4"
-gem "spree_admin", "~> 5.5.4"
-gem "spree_emails", "~> 5.5.4"
+# doesn't jump minor versions by itself (see ROADMAP.md for the next
+# deliberate upgrade).
+gem "spree", "~> 5.6.0"
+gem "spree_admin", "~> 5.6.0"
+gem "spree_emails", "~> 5.6.0"
 gem "spree_i18n"
 
 group :development do

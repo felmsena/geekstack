@@ -58,7 +58,7 @@ module SpreeTestHelpers
   end
 
   def create_mercado_pago_payment_method(store:, **prefs)
-    pm = Spree::PaymentMethod::MercadoPago.create!(name: "MercadoPago", stores: [ store ])
+    pm = Spree::PaymentMethod::MercadoPago.create!(name: "MercadoPago", store: store)
     prefs.each { |key, value| pm.public_send("preferred_#{key}=", value) }
     pm.save!
     pm

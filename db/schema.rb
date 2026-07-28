@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_24_032161) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_28_055142) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -163,6 +163,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_032161) do
   end
 
   create_table "spree_api_keys", force: :cascade do |t|
+    t.bigint "channel_id"
     t.datetime "created_at", null: false
     t.bigint "created_by_id"
     t.string "created_by_type"
@@ -178,6 +179,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_032161) do
     t.string "token_digest"
     t.string "token_prefix"
     t.datetime "updated_at", null: false
+    t.index ["channel_id"], name: "index_spree_api_keys_on_channel_id"
     t.index ["created_by_type", "created_by_id"], name: "index_spree_api_keys_on_created_by"
     t.index ["key_type"], name: "index_spree_api_keys_on_key_type"
     t.index ["revoked_by_type", "revoked_by_id"], name: "index_spree_api_keys_on_revoked_by"
@@ -278,6 +280,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_032161) do
     t.datetime "created_at", null: false
     t.boolean "default", default: false, null: false
     t.datetime "deleted_at", precision: nil
+    t.string "fingerprint"
     t.bigint "gateway_customer_id"
     t.string "gateway_customer_profile_id"
     t.string "gateway_payment_profile_id"
@@ -294,6 +297,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_032161) do
     t.index ["deleted_at"], name: "index_spree_credit_cards_on_deleted_at"
     t.index ["gateway_customer_id"], name: "index_spree_credit_cards_on_gateway_customer_id"
     t.index ["payment_method_id"], name: "index_spree_credit_cards_on_payment_method_id"
+    t.index ["user_id", "payment_method_id", "fingerprint", "month", "year"], name: "index_spree_credit_cards_unique_fingerprint", unique: true, where: "((fingerprint IS NOT NULL) AND (deleted_at IS NULL))"
     t.index ["user_id"], name: "index_spree_credit_cards_on_user_id"
   end
 
@@ -381,6 +385,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_032161) do
     t.datetime "created_at", null: false
     t.integer "format", null: false
     t.string "number", limit: 32, null: false
+    t.text "preferences"
     t.jsonb "search_params"
     t.bigint "store_id", null: false
     t.string "type", null: false
@@ -479,6 +484,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_032161) do
     t.datetime "updated_at", null: false
     t.text "validation_errors"
     t.index ["import_id", "row_number"], name: "index_spree_import_rows_on_import_id_and_row_number", unique: true
+    t.index ["import_id", "status"], name: "index_spree_import_rows_on_import_id_and_status"
     t.index ["import_id"], name: "index_spree_import_rows_on_import_id"
     t.index ["item_type", "item_id"], name: "index_spree_import_rows_on_item"
     t.index ["status"], name: "index_spree_import_rows_on_status"
@@ -798,6 +804,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_032161) do
     t.datetime "updated_at", null: false
     t.index ["channel_id", "active", "position"], name: "idx_order_routing_rules_lookup"
     t.index ["channel_id", "position"], name: "index_spree_order_routing_rules_on_channel_id_and_position"
+    t.index ["channel_id", "type"], name: "idx_order_routing_rules_channel_type", unique: true
     t.index ["channel_id"], name: "index_spree_order_routing_rules_on_channel_id"
     t.index ["store_id"], name: "index_spree_order_routing_rules_on_store_id"
     t.index ["type"], name: "index_spree_order_routing_rules_on_type"
@@ -892,9 +899,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_032161) do
     t.jsonb "private_metadata"
     t.jsonb "public_metadata"
     t.jsonb "settings"
+    t.bigint "store_id"
     t.string "type"
     t.datetime "updated_at", null: false
     t.index ["id", "type"], name: "index_spree_payment_methods_on_id_and_type"
+    t.index ["store_id"], name: "index_spree_payment_methods_on_store_id"
   end
 
   create_table "spree_payment_methods_stores", id: false, force: :cascade do |t|
@@ -1285,6 +1294,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_032161) do
     t.bigint "promotion_category_id"
     t.jsonb "public_metadata"
     t.datetime "starts_at", precision: nil
+    t.bigint "store_id"
     t.string "type"
     t.datetime "updated_at", null: false
     t.integer "usage_limit"
@@ -1296,6 +1306,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_032161) do
     t.index ["path"], name: "index_spree_promotions_on_path"
     t.index ["promotion_category_id"], name: "index_spree_promotions_on_promotion_category_id"
     t.index ["starts_at"], name: "index_spree_promotions_on_starts_at"
+    t.index ["store_id"], name: "index_spree_promotions_on_store_id"
   end
 
   create_table "spree_promotions_stores", force: :cascade do |t|
@@ -1473,6 +1484,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_032161) do
     t.bigint "resource_id"
     t.string "resource_type"
     t.bigint "role_id"
+    t.bigint "store_id"
     t.datetime "updated_at", precision: nil
     t.bigint "user_id"
     t.string "user_type", null: false
@@ -1480,6 +1492,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_032161) do
     t.index ["resource_id", "resource_type", "user_id", "user_type", "role_id"], name: "idx_on_resource_id_resource_type_user_id_user_type__5600304ec6", unique: true
     t.index ["resource_type", "resource_id"], name: "index_spree_role_users_on_resource"
     t.index ["role_id"], name: "index_spree_role_users_on_role_id"
+    t.index ["store_id"], name: "index_spree_role_users_on_store_id"
     t.index ["user_id"], name: "index_spree_role_users_on_user_id"
     t.index ["user_type"], name: "index_spree_role_users_on_user_type"
   end
@@ -1940,10 +1953,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_032161) do
     t.integer "position", default: 0
     t.string "pretty_name"
     t.jsonb "private_metadata"
+    t.integer "products_count", default: 0, null: false
     t.jsonb "public_metadata"
     t.bigint "rgt"
     t.string "rules_match_policy", default: "all", null: false
     t.string "sort_order", default: "manual", null: false
+    t.bigint "store_id"
     t.bigint "taxonomy_id"
     t.datetime "updated_at", null: false
     t.index ["children_count"], name: "index_spree_taxons_on_children_count"
@@ -1956,7 +1971,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_032161) do
     t.index ["permalink"], name: "index_taxons_on_permalink"
     t.index ["position"], name: "index_spree_taxons_on_position"
     t.index ["pretty_name"], name: "index_spree_taxons_on_pretty_name"
+    t.index ["products_count"], name: "index_spree_taxons_on_products_count"
     t.index ["rgt"], name: "index_spree_taxons_on_rgt"
+    t.index ["store_id"], name: "index_spree_taxons_on_store_id"
     t.index ["taxonomy_id"], name: "index_taxons_on_taxonomy_id"
   end
 
@@ -2031,6 +2048,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_032161) do
   end
 
   create_table "spree_variants", force: :cascade do |t|
+    t.integer "backorder_limit"
     t.string "barcode"
     t.string "cost_currency"
     t.decimal "cost_price", precision: 10, scale: 2
@@ -2043,6 +2061,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_032161) do
     t.boolean "is_master", default: false
     t.integer "media_count", default: 0, null: false
     t.integer "position"
+    t.datetime "preorder_ships_at"
+    t.boolean "preorderable"
     t.bigint "primary_media_id"
     t.jsonb "private_metadata"
     t.bigint "product_id"

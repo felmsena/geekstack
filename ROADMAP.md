@@ -141,6 +141,36 @@ tener tests (Fase 2), que son la red de seguridad de la migración.
       la guía oficial de upgrade para consumidores JS. Evaluar migrar el
       cliente manual `src/lib/spree.ts` al SDK TypeScript oficial.
 
+## Fase 3b — Actualizar Spree 5.5.4 → 5.6.0
+
+Salió mientras se cerraba la Fase 3. Mismo proceso cuidadoso, encadenado
+inmediatamente después del 5.4→5.5 (con tests + Brakeman/bundler-audit/RuboCop
+como red de seguridad de ambos saltos).
+
+- [x] Leído el release de v5.6.0 en GitHub y la guía oficial 5.5→5.6: el cambio
+      grande es que `Spree::Promotion` y `Spree::PaymentMethod` pasan de
+      many-to-many (`stores`) a `belongs_to :store` singular — mismo patrón que
+      `Spree::Product` en 5.5. Infra: Redis deja de ser requerido por defecto.
+- [x] Subida `spree`/`spree_admin`/`spree_emails` a `~> 5.6.0`. `bundle update`
+      solo movió Spree + transitivas (`alba`, `csv`, `phonelib`, `rbs`).
+- [x] Migraciones nuevas aplicadas (`spree:install:migrations && db:migrate`,
+      11 migraciones: `store_id` en role_users/taxons/promotions/payment_methods,
+      `products_count` en taxons, `channel_id` en api_keys, preorder en variants,
+      fingerprint en credit cards, etc.).
+- [x] Backfill con `spree:upgrade` (idempotente, 5 pasos: role_users store_id →
+      `populate_single_store_associations` [promotions+payment methods] →
+      taxons store_id → taxons products_count → product tag tenants).
+      Verificado en consola: `Spree::PaymentMethod::MercadoPago`/`Check`/
+      `StoreCredit` quedaron con `store_id` correcto.
+- [x] Único ajuste de código real: `Spree::PaymentMethod#stores=`/`Check#stores=`
+      en `db/seeds.rb` y `spree_test_helpers.rb` → `store:`/`store=` singular
+      (el shim viejo sigue funcionando pero con deprecation warning; ver
+      CLAUDE.md). No usamos `Spree::Promotion` custom todavía, sin impacto ahí.
+- [x] 26/26 tests pasan, Brakeman 0 warnings, `bundle-audit` limpio, RuboCop
+      sin offenses.
+- [ ] **Frontend (repo separado)**: subir `@spree/sdk` a `1.2+` (requerido por
+      la guía 5.6, reemplaza el requisito `1.1+` de la Fase 3).
+
 ## Fase 4 — Completar los flujos de ecommerce
 
 ### 4a. Cuentas de usuario
